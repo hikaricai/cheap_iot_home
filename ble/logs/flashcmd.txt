@@ -1,0 +1,5 @@
+nrfjprog --family nRF52 --eraseall
+Erasing user available code and UICR flash areas.
+Applying system reset.
+PS G:\embeded\ble\nordic HP\sdk\nRF5_SDK_12.3.0_d7731ad\components\softdevice\s132\hex> nrfjprog --family nRF52 --progra
+m .\s132_nrf52_3.0.0_softdevice.hex

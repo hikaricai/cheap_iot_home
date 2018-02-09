@@ -1,0 +1,4 @@
+1.change the ram base when necessary
+2.open the modules when it is needed 
+3.segger_rtt isn't real time,you can see the call trace in debug mode
+4.rubbish xunlian 51422 devboard need connect uart_to_232 and define boardpca10001 when use uart_p

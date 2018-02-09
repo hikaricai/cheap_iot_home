@@ -1,0 +1,59 @@
+1ctr in 0    0
+
+222 ffff    0
+2ctr in 2 2fff0002 //2fff0002 shoud be 2
+
+		USBH_UsrLog( "1ctr in %d %4x\r\n",USBH_LL_GetLastXferSize(phost , phost->Control.pipe_in),*(uint32_t*)(phost->Control.buff) );
+    USBH_CtlReceiveData(phost,
+                        phost->Control.buff, 
+                        phost->Control.length,
+                        phost->Control.pipe_in);
+ 
+    phost->Control.state = CTRL_DATA_IN_WAIT;
+    break;    
+    
+  case CTRL_DATA_IN_WAIT:
+    
+    URB_Status = USBH_LL_GetURBState(phost , phost->Control.pipe_in); 
+    
+    /* check is DATA packet transferred successfully */
+    if  (URB_Status == USBH_URB_DONE)
+    { 
+      phost->Control.state = CTRL_STATUS_OUT;
+			USBH_UsrLog( "2ctr in %d %4x\r\n",USBH_LL_GetLastXferSize(phost , phost->Control.pipe_in),*(uint32_t*)(phost->Control.buff) );//buf out
+#if (USBH_USE_OS == 1)
+    osMessagePut ( phost->os_event, USBH_CONTROL_EVENT, 0);
+#endif      
+    }
+
+
+
+
+
+
+
+
+
+Starting ADK Demoaaaa0aaaa1aaaa2aaaa3aaaa4aaaa5aaaa6aaaa7aaaa8aaaa9111 ffff    0\\\\before add ADK_Machine.txstate ADK_Machine.rxstate \\buf must duiqi
+111 ffff    0
+111 ffff    0
+111 ffff    0
+111    2    0
+111    2    0
+p is 2
+111    2    0
+ADK:SEND_MANUFACTURER
+ADK:SEND_MODEL
+ADK:SEND_DESCRIPTION
+ADK:SEND_VERSION
+ADK:SEND_URI
+ADK:SEND_SERIAL
+ADK:switch to accessory mode
+ADK:success
+ADK:configuration complete.
+Starting ADK Demoaaaa0aaaa1aaaa2aaaa3aaaa4aaaa5aaaa6aaaa7aaaa8aaaa9111 ffff    0
+111 ffff    0
+111 ffff    0
+111 ffff    0
+111    2 2fff
+111    2 2fff

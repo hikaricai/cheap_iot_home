@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+	<title>Leaflet class diagram - Leaflet</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+    <link rel="stylesheet" href="css/leaflet.css"/>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+    <script src="js/leaflet.js"></script>
+
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		#map {
+			width: 600px;
+			height: 400px;
+		}
+		
+		.btn-circle {
+		  width: 30px;
+		  height: 30px;
+		  text-align: center;
+		  padding: 6px 0;
+		  font-size: 12px;
+		  line-height: 1.428571429;
+		  border-radius: 15px;
+		}
+		.btn-circle.btn-lg {
+		  width: 50px;
+		  height: 50px;
+		  text-align: center;
+		  padding: 10px 16px;
+		  font-size: 18px;
+		  line-height: 1.33;
+		  border-radius: 25px;
+		}
+		.btn-circle.btn-xl {
+		  width: 70px;
+		  height: 70px;
+		  padding: 10px 16px;
+		  font-size: 24px;
+		  line-height: 1.33;
+		  border-radius: 35px;
+		}
+	</style>
+
+	<style>#map { width: 100vw; height: 100%; }</style>
+</head>
+
+<body>
+<div id='map'></div>
+
+<script type="text/javascript">
+	var ws = new WebSocket("ws://"+location.hostname+":9000");//creat a websocket
+	/*init WebSocket*/
+	initWS();
+	
+	function initWS(){
+		ws.onopen = function() {
+			console.log("ws opened");
+			ws.send("010000");
+		};
+		ws.onmessage = function(e) {
+			console.log("ws receive "+e.data);
+			var rxBytes = parseHexString(e.data);
+			rxHander(rxBytes);
+		}
+		ws.onclose = function(e) {
+			console.log("ws closed");
+			ws.close();
+		}
+		ws.onerror = function(e) {
+			console.log("ws err:"+e.data);
+		}
+	}
+
+	function rxHander(rxBytes)
+	{
+		var cmdBytes = rxBytes.slice(1);
+		switch(rxBytes[0])
+		{
+			case 0x00:
+				console.log("adk get:"+createHexString(cmdBytes));
+				markerSTM.bindPopup('<h4>HUMI is </h4>'+rxBytes[3]+'<br/><h4>TEMP is </h4>'+rxBytes[2]);
+				markerSTM.openPopup();
+			break;
+
+			case 0x01:
+				console.log("ble get:"+createHexString(cmdBytes));
+				bleHander(cmdBytes);
+			break;
+
+			case 0x02:
+				console.log("ble tree get:"+createHexString(rxBytes));
+				bleTreeHander(cmdBytes);
+			break;
+		}
+	}
+
+	function bleHander(cmdBytes)
+	{
+		var add = cmdBytes[0];
+		var cmd = cmdBytes[1];
+		switch(cmd)
+		{
+			case 0x01:
+				var RSSIs = [];
+				for(var i=2;i<cmdBytes.length;i++)
+				{
+					if(cmdBytes[i]!=0)
+					{
+						RSSIs.push(cmdBytes[i]);
+					}
+					else
+					{
+						break;
+					}
+				}
+				if(RSSIs.length>0)
+				{
+					showRSSIs(RSSIs);	
+				}
+			break;
+		}
+
+	}
+	
+	function bleTreeHander(cmdBytes)
+	{
+		refreshNodeArry(cmdBytes);
+	}
+	
+	function parseHexString(str) { 
+	    var result = [];
+	    while (str.length >= 2) { 
+	        result.push(parseInt(str.substring(0, 2), 16));
+	        str = str.substring(2, str.length);
+	    }
+
+	    return result;
+	}
+
+	function createHexString(arr) {
+	    var result = "";
+	    for (i in arr) {
+	        var str = arr[i].toString(16);
+	        str = str.length == 0 ? "00" :
+	              str.length == 1 ? "0" + str : 
+	              str.length == 2 ? str :
+	              str.substring(str.length-2, str.length);
+	        result += str;
+	    }
+	    return result;
+	}
+	/*init map*/
+	var mapHeight = 1600,mapWidth = 1200;
+	//var postIdArryOld=[0x01,0x21,0x00];
+	//var postIdArryNew=[0x62,0x21,0x00];
+	var postNodeArry=new Array();
+	var bounds = [[0,0], [mapHeight,mapWidth]];
+	var map = L.map('map', {
+	crs: L.CRS.Simple,
+	maxZoom: 0,
+	minZoom: -4,
+	maxBounds: bounds
+	});
+	var image = L.imageOverlay('house.png', bounds).addTo(map);
+	map.fitBounds(bounds);
+	var currentMarkerId;
+	
+	function getNodeFatherId(id)
+	{
+		//var fid = (0x10<<(id&0x0f))^id - 1;
+		var fid = (id&0xc0)>>1;
+		fid += (id&0x0f)-1;
+		console.log("getNodeFatherId"+id+" "+fid);
+		return fid;
+	}
+	function getNodeLeftChildId(id)
+	{
+		//var fid = (0x10<<(id&0x0f))^id - 1;
+		var cid = (id&0xe0)<<1;
+		cid += ((id&0x0f)+1);
+		console.log("getNodeLeftChildId"+id+" "+cid);
+		return cid;
+	}
+	function getNodeRightChildId(id)
+	{
+		//var fid = (0x10<<(id&0x0f))^id - 1;
+		var cid = (id&0xe0)<<1;
+		cid += 0x20
+		cid += ((id&0x0f)+1);
+		console.log("getNodeRightChildId"+id+" "+cid);
+		return cid;
+	}
+	function getLocateFromIdFather(id,fLocate)
+	{
+		var locate = new Array;
+		if( (id&0x20)>0)
+		{
+			locate = [fLocate.lat-200,fLocate.lng+200];
+		}
+		else
+		{
+			locate = [fLocate.lat-200,fLocate.lng-200];
+		}
+		return locate;
+	}
+	function setLocation(id)
+	{
+		var idx = isInNodeArray(id);
+		var ret;
+		console.log("setLocation id "+id+" idx "+idx);
+		if(postNodeArry[idx].hasLocation == true)
+		{
+			ret = postNodeArry[idx].getLatLng();
+		}
+		else if(id == 0)
+		{
+			postNodeArry[idx].setLatLng([mapHeight/2,mapWidth/2]);
+			postNodeArry[idx].hasLocation = true;
+			postNodeArry[idx].addTo(map);
+			ret = postNodeArry[idx].getLatLng();
+		}
+		else
+		{
+			var fId = getNodeFatherId(id);
+			var fLocate = setLocation(fId);
+			var locate = getLocateFromIdFather(id,fLocate);
+			postNodeArry[idx].setLatLng(locate);
+			postNodeArry[idx].hasLocation = true;
+			postNodeArry[idx].addTo(map);
+			ret = postNodeArry[idx].getLatLng();
+			var lls = [ret,fLocate];
+			postNodeArry[idx].line.setLatLngs(lls).addTo(map);
+		}
+		
+		return ret;
+	}
+
+	function onMarkerClick(e)
+	{
+		currentMarkerId = e.target.id;
+	}
+	
+	function onMarkerDragEnd(e)
+	{
+		var id = e.target.id;
+		var fid,idx;
+		var lcid = getNodeLeftChildId(id);
+		var rcid = getNodeRightChildId(id);
+		var mll = e.target.getLatLng();
+		if(id != 0x00)//zero node has no father
+		{
+			fid = getNodeFatherId(id)
+			idx = isInNodeArray(fid);
+			if(idx < postNodeArry.length)
+			{
+				var fll = postNodeArry[idx].getLatLng();
+				var lls = [mll,fll];
+				e.target.line.setLatLngs(lls);
+			}
+		}
+		
+		idx = isInNodeArray(lcid);
+		if(idx < postNodeArry.length)
+		{
+			var line = postNodeArry[idx].line;
+			var cll = postNodeArry[idx].getLatLng();
+			var lls = [cll,mll];
+			line.setLatLngs(lls);
+		}
+		
+		idx = isInNodeArray(rcid);
+		if(idx < postNodeArry.length)
+		{
+			var line = postNodeArry[idx].line;
+			var cll = postNodeArry[idx].getLatLng();
+			var lls = [cll,mll];
+			line.setLatLngs(lls);
+		}
+	}
+
+	function isInIdArray(id,array)
+	{
+		var i;
+		for(i=0;i<array.length;i++)
+		{
+			if(array[i] == id)
+			{
+				console.log("id "+id+"in idArry");
+				break;
+			}
+		}
+		return i;
+	}
+	
+	function isInNodeArray(id)
+	{
+		var i;
+		for(i=0;i<postNodeArry.length;i++)
+		{
+			if(postNodeArry[i].id == id)
+			{
+				console.log("id "+id+"in postNodeArry");
+				break;
+			}
+		}
+		return i;
+	}
+	
+	function refreshNodeArry(postIdArry)
+	{
+		var nodeArry = new Array();
+		var strScan = '<button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalScan">Scan</button>';
+		var strDiscon = '<button class="btn btn-success btn-sm" onclick="onDiscon()">Discon</button>';
+		var strGetStatus = '<button class="btn btn-default btn-sm" onclick="onGetStatus()">Stat</button>';
+		var strFunc = '<button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#modalFunc">func</button>';
+		for(var i=0;i<postIdArry.length;i++)
+		{
+			var id = postIdArry[i];
+			var idx = isInNodeArray(id);
+			var marker;
+			if(idx<postNodeArry.length)
+			{
+				marker = postNodeArry[idx];
+				postNodeArry.splice(idx,1);
+				console.log("push old"+i);
+			}
+			else
+			{
+				
+				marker = L.marker([0,0],{draggable:true});
+				marker.id = id;
+				marker.hasLocation = false;
+				marker.line = L.polyline([0,0], {color: 'red'});
+				marker.on('dragend', onMarkerDragEnd);
+				marker.on('click', onMarkerClick);
+				
+				console.log("push new"+i);
+			}
+			nodeArry.push(marker);
+			
+			var cCount=0;
+			var lcid = getNodeLeftChildId(id);
+			var rcid = getNodeRightChildId(id);
+			idx = isInIdArray(lcid,postIdArry);
+			if(idx < postIdArry.length)
+			{
+				cCount++;
+			}
+			idx = isInIdArray(rcid,postIdArry);
+			if(idx < postIdArry.length)
+			{
+				cCount++;
+			}
+			var strPop = '<b>I am pop </b>'+id+'</br>';
+			if(cCount<2)
+			{
+				strPop += strScan+strDiscon+strGetStatus+strFunc;
+			}
+			else
+			{
+				strPop += strDiscon+strGetStatus+strFunc;
+			}
+			marker.bindPopup(strPop);
+		}
+		
+		for(var i=0;i<postNodeArry.length;i++)
+		{
+			postNodeArry[i].line.remove();
+			postNodeArry[i].remove();
+			console.log("remove"+i);
+		}
+		postNodeArry = nodeArry;
+		
+		for(var i=0;i<postIdArry.length;i++)
+		{
+			setLocation(postIdArry[i]);
+		}
+	}
+	
+	//refreshNodeArry(postIdArryOld);
+
+	var IphoneIcon = L.icon({
+	        iconUrl: 'iphone.png',
+	        iconAnchor: [22, 94],
+    		popupAnchor: [-3, -76],
+	        iconSize: [38, 95], // size of the icon
+	        });
+	var markerSTM = L.marker([1000, 1000],{draggable:true,icon:IphoneIcon}).addTo(map)
+		.bindPopup('<h4>click me to show H&T</h4>');
+	markerSTM.openPopup();
+	markerSTM.on('click', onMarkerSTMClick);
+	function onMarkerSTMClick(e) {
+		var arr = [0x00,0x00];
+		var strSend = createHexString(arr);
+		console.log("ws sent:"+strSend);
+		ws.send(strSend);
+	}
+	
+</script>
+
+<!-- （Modal） -->
+<div class="modal fade" id="modalScan" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="myModalLabel">
+					Please select the node to connect
+				</h4>
+			</div>
+			<div class="modal-body" >
+				<div class="btn-group" id="rssis" data-toggle="buttons">
+					<p>scanning please wait 5s</p>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" 
+						data-dismiss="modal">cancel
+				</button>
+				<button type="button" id="submitRSSI" class="btn btn-primary" data-dismiss="modal">
+					connect
+				</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<script>
+var rssi = [100,200,150];
+//showRSSIs(rssi);
+function showRSSIs(rssi)
+{
+	$("#rssis").empty();
+	var strRSSIs;
+	for(var i=0;i<rssi.length;i++)
+	{
+		strRSSIs = '<label class="btn btn-primary "><input type="radio" name="options" id="rssi'+i+'">'+rssi[i]+'</label>';
+		$("#rssis").append(strRSSIs);
+	}
+}
+$('#submitRSSI').on('click', function () {
+	var id = $("input[name='options']:checked").attr('id');
+	if(id == null)
+	{
+		return;
+	}
+	var strIdx = id.substring(4);
+	var idx = parseInt(strIdx,16);
+	var arr = [0x01,currentMarkerId,0x02];
+	arr.push(idx);
+	var strSend = createHexString(arr);
+	console.log("ws sent:"+strSend);
+	ws.send(strSend);
+	$("#rssis").empty();
+	$("#rssis").append('<p>scanning please wait 5s</p>');
+});
+
+function onDiscon() {
+	var arr = [0x01,currentMarkerId,0x03];
+	var strSend = createHexString(arr);
+	console.log("ws sent:"+strSend);
+	ws.send(strSend);
+};
+
+function onGetStatus() {
+	var arr = [0x01,currentMarkerId,0x00];
+	var strSend = createHexString(arr);
+	console.log("ws sent:"+strSend);
+	ws.send(strSend);
+};
+$(function () { $('#modalScan').on('shown.bs.modal', function () {
+	var arr = [0x01,currentMarkerId,0x01];
+	var strSend = createHexString(arr);
+	console.log("ws sent:"+strSend);
+	ws.send(strSend);
+  })
+});
+</script>
+
+
+<div class="modal fade" id="modalFunc" tabindex="-1" role="dialog"  aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header" style="background-color:#f5f5f5;">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true"> </button>
+				<h3><span style="font-family:'Microsoft YaHei UI';font-weight:bold;">IR LIGHT CONTROL</span>
+				</h3>
+			</div>
+			<div class="modal-body">
+				<div class="controllamp">
+					<p style="color:#FFF;">REMOTE CONTROL</p>
+					<div >
+						<table class="table table-condensed">
+							<thead>
+							</thead>
+							<tbody>
+							
+								<tr class="success table-condensed text-center" >
+									<td><button type="button" id="btn4" class="btn btn-default btn-circle btn-lg">Dn</button></td>
+									<td><button type="button" id="btn5" class="btn btn-default btn-circle btn-lg">Up</button></td>
+									<td><button type="button" id="btn6" class="btn btn-warning btn-circle btn-lg">Off</button></td>
+									<td><button type="button" id="btn7" class="btn btn-info btn-circle btn-lg">On</button></td>
+								</tr>
+								<tr class="success table-condensed text-center">
+									<td><button type="button" id="btn8" class="btn btn-success btn-circle btn-lg">G</button></td>
+									<td><button type="button" id="btn9" class="btn btn-danger btn-circle btn-lg">R</button></td>
+									<td><button type="button" id="btna" class="btn btn-primary btn-circle btn-lg">B</button></td>
+									<td><button type="button" id="btnb" class="btn btn-default btn-circle btn-lg">W</button></td>
+								</tr>
+								<tr>
+									<td></td>
+									<td></td>
+									<td></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer" style="background-color:#f5f5f5" ;>
+				<button type="button" class="btn btn-default" 
+					data-dismiss="modal">CLOSE
+				</button>
+				© IOT IN HOME
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+	$(function () {
+		$('.btn-circle').on('click', function (e) {
+			e.preventDefault();
+			var id = $(this).attr('id');
+			if(id == null)
+			{
+				return;
+			}
+			var strCode = id.substring(3);
+			var code = parseInt(strCode,16);
+			var arr = [0x01,currentMarkerId,0x05,0x00,code];
+			var strSend = createHexString(arr);
+			console.log("ws sent:"+strSend);
+			ws.send(strSend);
+		});
+	});
+</script>
+	
+</body>
+</html>

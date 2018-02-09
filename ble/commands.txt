@@ -1,0 +1,3 @@
+get_status 0000
+scan 0001
+connect 0002

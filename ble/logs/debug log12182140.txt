@@ -1,0 +1,211 @@
+error code 20003490
+----------------------------------------uart_relay
+
+static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
+{
+    uint16_t conn_handle;
+    uint16_t role;
+
+    ble_conn_state_on_ble_evt(p_ble_evt);
+
+    // The connection handle should really be retrievable for any event type.
+    conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+    role        = ble_conn_state_role(conn_handle);
+    // Based on the role this device plays in the connection, dispatch to the right applications.
+    SEGGER_RTT_printf(0,"pack %d %d %d\r\n",conn_handle,role,p_ble_evt->header.evt_id);
+    if (role == BLE_GAP_ROLE_PERIPH)
+    {
+
+ 0> pack 65535 0 29
+ 0> pack 0 1 16
+ 0> pack 0 1 85
+ 0> pack 0 1 80
+ 0> pack 0 1 80
+ 0> aaaaaaaaapack 0 1 1
+ 0> pack 65535 0 29//BLE_GAP_EVT_ADV_REPORT
+ 0> pack 65535 0 29
+ 
+
+
+
+hello,rtt
+pack 0 1 16
+pack 0 1 18
+pack 0 1 80
+pack 0 1 18
+pack 0 1 80
+nihaipack 0 1 1
+pack 0 1 18
+pack 0 1 80
+abcdpack 0 1 1
+pack 0 1 80
+abcdpack 0 1 1
+pack 0 1 80
+nihaipack 0 1 1
+hello,rtt
+pack 0 1 16
+pack 0 1 18
+pack 0 1 18
+pack 0 1 80
+pack 0 1 80
+nihaipack 0 1 1
+pack 0 1 80
+abcdpack 0 1 1
+pack 0 1 18
+hello,rtt
+pack 65535 0 29
+pack 65535 0 29
+
+ enum BLE_GATTS_EVTS
+{
+  BLE_GATTS_EVT_WRITE = BLE_GATTS_EVT_BASE=80,       /**< Write operation performed.                                           \n See @ref ble_gatts_evt_write_t.                 */
+  BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST,             /**< Read/Write Authorization request.                                    \n Reply with @ref sd_ble_gatts_rw_authorize_reply. \n See @ref ble_gatts_evt_rw_authorize_request_t. */
+  BLE_GATTS_EVT_SYS_ATTR_MISSING,                 /**< A persistent system attribute access is pending.                     \n Respond with @ref sd_ble_gatts_sys_attr_set.     \n See @ref ble_gatts_evt_sys_attr_missing_t.     */
+  BLE_GATTS_EVT_HVC,                              /**< Handle Value Confirmation.                                           \n See @ref ble_gatts_evt_hvc_t.                   */
+  BLE_GATTS_EVT_SC_CONFIRM,                       /**< Service Changed Confirmation. No additional event structure applies.                                                    */
+  BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST,             /**< Exchange MTU Request.                                                \n Reply with @ref sd_ble_gatts_exchange_mtu_reply. \n See @ref ble_gatts_evt_exchange_mtu_request_t. */
+  BLE_GATTS_EVT_TIMEOUT                           /**< Peer failed to resonpond to an ATT request in time.                  \n See @ref ble_gatts_evt_timeout_t.               */
+};
+
+enum BLE_GAP_EVTS
+{
+  BLE_GAP_EVT_CONNECTED  = BLE_GAP_EVT_BASE = 16,    /**< Connection established.                         \n See @ref ble_gap_evt_connected_t.            */
+  BLE_GAP_EVT_DISCONNECTED,                     /**< Disconnected from peer.                         \n See @ref ble_gap_evt_disconnected_t.         */
+  BLE_GAP_EVT_CONN_PARAM_UPDATE,                /**< Connection Parameters updated.                  \n See @ref ble_gap_evt_conn_param_update_t.    */
+  BLE_GAP_EVT_SEC_PARAMS_REQUEST,               /**< Request to provide security parameters.         \n Reply with @ref sd_ble_gap_sec_params_reply.  \n See @ref ble_gap_evt_sec_params_request_t. */
+  BLE_GAP_EVT_SEC_INFO_REQUEST,                 /**< Request to provide security information.        \n Reply with @ref sd_ble_gap_sec_info_reply.    \n See @ref ble_gap_evt_sec_info_request_t.   */
+  BLE_GAP_EVT_PASSKEY_DISPLAY,                  /**< Request to display a passkey to the user.       \n In LESC Numeric Comparison, reply with @ref sd_ble_gap_auth_key_reply. \n See @ref ble_gap_evt_passkey_display_t. */
+  BLE_GAP_EVT_KEY_PRESSED,                      /**< Notification of a keypress on the remote device.\n See @ref ble_gap_evt_key_pressed_t           */
+  BLE_GAP_EVT_AUTH_KEY_REQUEST,                 /**< Request to provide an authentication key.       \n Reply with @ref sd_ble_gap_auth_key_reply.    \n See @ref ble_gap_evt_auth_key_request_t.   */
+  BLE_GAP_EVT_LESC_DHKEY_REQUEST,               /**< Request to calculate an LE Secure Connections DHKey. \n Reply with @ref sd_ble_gap_lesc_dhkey_reply.  \n See @ref ble_gap_evt_lesc_dhkey_request_t */
+  BLE_GAP_EVT_AUTH_STATUS,                      /**< Authentication procedure completed with status. \n See @ref ble_gap_evt_auth_status_t.          */
+  BLE_GAP_EVT_CONN_SEC_UPDATE,                  /**< Connection security updated.                    \n See @ref ble_gap_evt_conn_sec_update_t.      */
+  BLE_GAP_EVT_TIMEOUT,                          /**< Timeout expired.                                \n See @ref ble_gap_evt_timeout_t.              */
+  BLE_GAP_EVT_RSSI_CHANGED,                     /**< RSSI report.                                    \n See @ref ble_gap_evt_rssi_changed_t.         */
+  BLE_GAP_EVT_ADV_REPORT,         29              /**< Advertising report.                             \n See @ref ble_gap_evt_adv_report_t.           */
+  BLE_GAP_EVT_SEC_REQUEST,                      /**< Security Request.                               \n See @ref ble_gap_evt_sec_request_t.          */
+  BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST,        /**< Connection Parameter Update Request.            \n Reply with @ref sd_ble_gap_conn_param_update. \n See @ref ble_gap_evt_conn_param_update_request_t. */
+  BLE_GAP_EVT_SCAN_REQ_REPORT,                  /**< Scan request report.                            \n See @ref ble_gap_evt_scan_req_report_t.      */
+};
+
+enum BLE_COMMON_EVTS
+{
+  BLE_EVT_TX_COMPLETE  = BLE_EVT_BASE=1,  /**< Transmission Complete. @ref ble_evt_tx_complete_t */
+  BLE_EVT_USER_MEM_REQUEST,             /**< User Memory request. @ref ble_evt_user_mem_request_t */
+  BLE_EVT_USER_MEM_RELEASE,             /**< User Memory release. @ref ble_evt_user_mem_release_t */
+  BLE_EVT_DATA_LENGTH_CHANGED           /**< Link layer PDU length changed. @ref ble_evt_data_length_changed_t. */
+};
+
+  BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP = BLE_GATTC_EVT_BASE=48,  /**< Primary Service Discovery Response event.      \n See @ref ble_gattc_evt_prim_srvc_disc_rsp_t.          */
+  BLE_GATTC_EVT_REL_DISC_RSP,                             /**< Relationship Discovery Response event.         \n See @ref ble_gattc_evt_rel_disc_rsp_t.                */
+  BLE_GATTC_EVT_CHAR_DISC_RSP,                            /**< Characteristic Discovery Response event.       \n See @ref ble_gattc_evt_char_disc_rsp_t.               */
+  BLE_GATTC_EVT_DESC_DISC_RSP,                            /**< Descriptor Discovery Response event.           \n See @ref ble_gattc_evt_desc_disc_rsp_t.               */
+  BLE_GATTC_EVT_ATTR_INFO_DISC_RSP,                       /**< Attribute Information Response event.          \n See @ref ble_gattc_evt_attr_info_disc_rsp_t. */
+  BLE_GATTC_EVT_CHAR_VAL_BY_UUID_READ_RSP,                /**< Read By UUID Response event.                   \n See @ref ble_gattc_evt_char_val_by_uuid_read_rsp_t.   */
+  BLE_GATTC_EVT_READ_RSP,                                 /**< Read Response event.                           \n See @ref ble_gattc_evt_read_rsp_t.                    */
+  BLE_GATTC_EVT_CHAR_VALS_READ_RSP,                       /**< Read multiple Response event.                  \n See @ref ble_gattc_evt_char_vals_read_rsp_t.          */
+  BLE_GATTC_EVT_WRITE_RSP,                                /**< Write Response event.                          \n See @ref ble_gattc_evt_write_rsp_t.                   */
+  BLE_GATTC_EVT_HVX,                                      /**< Handle Value Notification or Indication event. \n Confirm indication with @ref sd_ble_gattc_hv_confirm.  \n See @ref ble_gattc_evt_hvx_t. */
+  BLE_GATTC_EVT_EXCHANGE_MTU_RSP,                         /**< Exchange MTU Response event.                   \n See @ref ble_gattc_evt_exchange_mtu_rsp_t.            */
+  BLE_GATTC_EVT_TIMEOUT       =59                            /**< Timeout event.                                 \n See @ref ble_gattc_evt_timeout_t.                     */
+};
+----------------------------------------uart_relay
+
+----------------------------------------uart_p
+ 0> hello,rtt
+ 0> pack 16
+ 0> pack 85
+ 0> pack 80//iphone send string
+ 0> pack 80
+ 0> pack 80
+ 0> pack 1
+ 0> pack 1//uart input
+ 0> pack 1
+ 0> pack 1
+ 0> pack 1
+ 0> pack 80
+ 0> pack 17//iphone send disconnect
+----------------------------------------uart_p
+
+
+
+----------------------------------------offical_relay
+ 0> hello rtt
+ 0> APP:INFO:Relay Example
+ 0> APP:INFO:Fast Advertising
+ 0> pack 0 1 16
+ 0> APP:INFO:Peripheral connected
+ 0> pack 0 1 18
+ 0> pack 0 1 80
+ 0> pack 0 1 18
+ 0> pack 0 1 18
+ 0> pack 0 1 17
+ 0> APP:INFO:Peripheral disconnected
+ 0> APP:INFO:Fast Advertising
+ 0> pack 0 1 29
+ 0> pack 0 1 29
+ 0> pack 0 1 29
+ 0> pack 0 1 16
+ 0> APP:INFO:Peripheral connected
+ 0> pack 0 1 18
+ 0> pack 0 1 80
+ 0> pack 0 1 18
+ 0> pack 0 1 17
+ 0> APP:INFO:Peripheral disconnected
+ 0> APP:INFO:Fast Advertising
+----------------------------------------offical_relay
+
+
+----------------------------------------uart_relay conto uart_p
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 1 2 16
+ 0> pack 1 2 48
+ 0> pack 1 2 50
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 1 2 50
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 1 2 50
+ 0> pack 1 2 51
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> pack 65535 0 29
+ 0> hello,rtt
+----------------------------------------uart_relay conto uart_p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
