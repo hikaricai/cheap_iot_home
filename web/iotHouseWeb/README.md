@@ -1,0 +1,4 @@
+# WEB
+ウェブはleafletを基づいた。主な機能はwebsocketでAndroidと通信したり、BLEネットワークをウェブコントロールしたりすることです。
+
+この部分を利用するには他のウェブサーバーが必要となる。例えば、linux deployでAndroidにlinuxの機能持たせる。又は、Servers Ultimateでウェブサーバーの機能を加える。

@@ -1,2 +1,2 @@
-# ble_bi_tree
- a binary tree networt on nrf5 ble socs
+# BLEモジュール
+ ハードウェアはNRF52832、SoftDeviceはS132。コードはオフィシャルデモ（ble_app_hrs_rscs_relay）からKEILで開発される。具体的なコマンドはbin_tree_node.hに見られます。
