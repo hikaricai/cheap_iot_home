@@ -40,5 +40,5 @@ Android端末は多数のBLEからなる二分木構造ネットワークを制�
 ## TODO
 今展示されたプロジェクトは単純なデモに過ぎない。後の仕事はこのシステムに「いのち」と「知能」を入れることを目指しています。今はAndroid端末にtensor flowのデモは一秒以内で画面にある多様なものをトラッキングしながら区別できる。人工知能が流行っている時代にあって、その成果を利用してもっと面白い生活を迎えましょう。
 
-##VIDEO DEMO
+## VIDEO DEMO
 [https://youtu.be/9dpHXtEXASg](https://youtu.be/9dpHXtEXASg "video demo")
